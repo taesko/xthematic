@@ -1,5 +1,53 @@
+import logging
 import os
 import pathlib
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+CONSOLE_HANDLER = logging.StreamHandler()
+CONSOLE_HANDLER.setLevel(logging.WARNING)
+CONSOLE_HANDLER.setFormatter(logging.Formatter(fmt='{levelname}: {message}', style='{'))
+root_logger.addHandler(CONSOLE_HANDLER)
+
+
+def file_state_ok(file):
+    if file.exists():
+        if not os.access(file, mode=os.R_OK | os.W_OK):
+            logging.warning("can't r/w to file %s", file)
+        return True
+
+    try:
+        file.write_text('')
+    except OSError:
+        logging.warning("file '%s' doesn't exist and couldn't be created", file)
+        return False
+
+    return True
+
+
+def get_safe_file(file, backup=None):
+    """ Get a safe file path that is guaranteed to exist and have r/w access.
+
+    Returns the file argument if file_state_ok is true for it.
+    Returns the backup argument if it's supplied and file_state_ok is not true for the first argument.
+    Otherwise raises RuntimeError
+    """
+    if file_state_ok(file):
+        return file
+    elif backup and file_state_ok(backup):
+        logging.info("can't r/w to file %s, using backup %s", file, backup)
+        return backup
+    else:
+        if backup:
+            raise RuntimeError("can't r/w to file %s", file)
+        else:
+            raise RuntimeError("can't r/w to file %s or backup %s", file, backup)
+
+
+def get_safe_dir(path):
+    if not path.exists():
+        path.mkdir(exist_ok=True)
+    return path
 
 
 def get_multiple(dct, keys, default=None):
@@ -20,31 +68,26 @@ def user_config_home():
         return pathlib.Path(os.environ['HOME'], '.config')
 
 
-USER_CONFIG_DIR = user_config_home() / 'xredit'
-USER_CONFIG_FILE = USER_CONFIG_DIR / 'config'
-USER_CUSTOM_FILE = USER_CONFIG_DIR / 'custom'
-USER_XRESOURCES_FILE = pathlib.Path(os.environ['HOME'], '.Xresources')
-USER_THEME_DIR = pathlib.Path(os.environ.get('XTHEMES_DIR', USER_CONFIG_DIR / 'themes'))
+try:
+    TERMINAL_SESSION_ID = os.environ['TERM_SESSION_ID']
+except KeyError:
+    logging.critical('$TERM_SESSION_ID variable is not set - see install instructions.')
+    raise
 
-USER_CONFIG_DIR.mkdir(exist_ok=True)
-USER_THEME_DIR.mkdir(exist_ok=True)
-if not USER_CONFIG_FILE.exists():
-    USER_CONFIG_FILE.write_text('')
-if not USER_CUSTOM_FILE.exists():
-    USER_CUSTOM_FILE.write_text('{}', encoding='ascii')  # write an empty json object so the file is decodable
+USER_CONFIG_DIR = get_safe_dir(user_config_home() / 'xredit')
+USER_THEME_DIR = get_safe_dir(pathlib.Path(os.environ.get('XTHEMES_DIR', USER_CONFIG_DIR / 'themes')))
+USER_CONFIG_FILE = get_safe_file(USER_CONFIG_DIR / 'config')
+USER_CUSTOM_FILE = get_safe_file(USER_CONFIG_DIR / 'custom')
+USER_XRESOURCES_FILE = get_safe_file(pathlib.Path(os.environ['HOME'], '.Xresources'))
 
-LOG_FILE = pathlib.Path('/var/log/xredit.log')
-BACKUP_LOG_FILE = pathlib.Path(USER_CONFIG_DIR / 'logs')
-BACKUP_LOG_FILE.write_text('')
-if not LOG_FILE.exists():
-    print(f"log file {LOG_FILE} doesn't exist")
-    if os.access(LOG_FILE, os.R_OK | os.W_OK):
-        LOG_FILE.write_text('')
-    else:
-        print("can't create log file - no r/w permissions")
-        LOG_FILE = BACKUP_LOG_FILE
-        print(f"using backup log file {LOG_FILE}")
+LOG_FILE = get_safe_file(pathlib.Path('/var/log/xredit.log'),
+                         backup=pathlib.Path(USER_CONFIG_DIR / 'logs'))
 
-TERMINAL_SESSION_ID = os.environ['TERM_SESSION_ID']
+LOG_FILE_HANDLER = logging.FileHandler(str(LOG_FILE))
+LOG_FILE_HANDLER.setLevel(logging.DEBUG)
+fmt_s = '{asctime} ' + TERMINAL_SESSION_ID[-4:] + ' {module}.{funcName} line {lineno}: {levelname}: {message}'
+LOG_FILE_HANDLER.setFormatter(logging.Formatter(fmt=fmt_s, style='{'))
+root_logger.addHandler(LOG_FILE_HANDLER)
+
 _xlf = os.environ.get('XTHEME_LINK_FILE', None)
 USER_THEME_LINK_FILE = pathlib.Path(_xlf) if _xlf else _xlf
