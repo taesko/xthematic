@@ -27,7 +27,7 @@ class _LoadedColors(collections.Mapping):
     def __init__(self):
         self._colors = {}
         self._hash = ''
-        logger.debug('initialized %s instance %s', self.__class__.__name__, self)
+        logger.debug('initialized %s', self.__class__.__name__, object.__repr__(self))
 
     @staticmethod
     def xrdb_hash():
@@ -64,11 +64,9 @@ class _LoadedColors(collections.Mapping):
         return self._colors[k]
 
     def update(self):
-        # print(self)
-        # logger.info('updating _LoadedColors instance %s', self)
         self._colors = self.loaded()
         self._hash = self.xrdb_hash()
-        # logger.info('loaded color identifiers: %s', [c.id for c in self._colors])
+        logger.debug('updated colors of %s', object.__repr__(self))
 
     def is_outdated(self):
         return self._hash != self.xrdb_hash()
