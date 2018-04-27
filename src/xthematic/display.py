@@ -96,12 +96,11 @@ def echo_theme(theme_name=None):
         colors = xthematic.term.TERMINAL_COLORS
     with ColoredStream.open() as stream:
         for row_id in xthematic.colors.ColorIdentifier.all_four_bit_colors():
-            stream.echo(text=row_id, fg=colors[row_id], nl=True)
-            # for col_id in list(xthematic.colors.ColorIdentifier.all_four_bit_colors())[:8]:
-            #     stream.echo(text=escape_sequence_index_string(fg_id=row_id, bg_id=col_id),
-            #                 nl=False, fg=colors[row_id], bg=colors[col_id])
-            #     click.echo(' ', nl=False)
-            # click.echo(nl=True)
+            for col_id in list(xthematic.colors.ColorIdentifier.all_four_bit_colors())[:8]:
+                stream.echo(text=escape_sequence_index_string(fg_id=row_id, bg_id=col_id),
+                            nl=False, fg=colors[row_id], bg=colors[col_id])
+                click.echo(' ', nl=False)
+            click.echo(nl=True)
         input()
 
 
