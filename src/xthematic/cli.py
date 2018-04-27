@@ -1,15 +1,14 @@
 import functools
-
-import collections
 import string
 
 import click
+import collections
 
-import xredit.colors
-import xredit.display
-import xredit.themes
-import xredit.config
-import xredit.term
+import xthematic.colors
+import xthematic.config
+import xthematic.display
+import xthematic.term
+import xthematic.themes
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -60,9 +59,9 @@ class ColorType(click.ParamType):
     def convert(self, value, param, ctx):
         try:
             if not value.startswith('#'):
-                return xredit.colors.Color('#' + value)
+                return xthematic.colors.Color('#' + value)
             else:
-                return xredit.colors.Color(value)
+                return xthematic.colors.Color(value)
         except ValueError:
             self.fail(f"{value!r} is not a valid hex code", param, ctx)
 
@@ -72,7 +71,7 @@ class ColorIdType(click.ParamType):
 
     def convert(self, value, param, ctx):
         try:
-            return xredit.colors.ColorIdentifier(int(value))
+            return xthematic.colors.ColorIdentifier(int(value))
         except (ValueError, TypeError):
             self.fail(f"{value!r} is not a valid color identifier")
 
@@ -125,7 +124,7 @@ def view(color_views, foreground, background, text):
     The options '-f', '-b', '-t' can be used to specify default foreground, background and text
     otherwise the default for the terminal are used whilst text is all the ascii letters.
     """
-    with xredit.display.ColoredStream.open() as stream:
+    with xthematic.display.ColoredStream.open() as stream:
         nl = True
         for i, cv in enumerate(color_views):
             fg = cv.foreground or foreground
@@ -171,21 +170,21 @@ def theme(theme_name, list, remove, activate, permanent, save, overwrite):
     """
     if not theme_name:
         if list:
-            click.echo(' '.join(xredit.themes.all_themes()), nl=True)
+            click.echo(' '.join(xthematic.themes.all_themes()), nl=True)
         else:
-            xredit.display.echo_theme()
+            xthematic.display.echo_theme()
     elif activate:
-        if xredit.config.USER_THEME_LINK_FILE:
-            xredit.themes.activate_theme(theme_name, permanent=permanent,
-                                         link_file=xredit.config.USER_THEME_LINK_FILE)
+        if xthematic.config.USER_THEME_LINK_FILE:
+            xthematic.themes.activate_theme(theme_name, permanent=permanent,
+                                            link_file=xthematic.config.USER_THEME_LINK_FILE)
         else:
-            xredit.themes.activate_theme(theme_name, permanent=permanent)
+            xthematic.themes.activate_theme(theme_name, permanent=permanent)
     elif save:
-        xredit.themes.save_terminal_colors(theme_name, overwrite=overwrite)
+        xthematic.themes.save_terminal_colors(theme_name, overwrite=overwrite)
     elif remove:
-        xredit.themes.remove_theme(name=theme_name)
+        xthematic.themes.remove_theme(name=theme_name)
     else:
-        xredit.display.echo_theme(theme_name)
+        xthematic.display.echo_theme(theme_name)
 
 
 @main.command()
@@ -208,7 +207,7 @@ def color(color_id, color, xresources_file, theme_name, all_terminals):
     Otherwise it sets the terminal color for that id to the hex code.
     """
     def display_color(color_):
-        with xredit.display.ColoredStream.open() as stream:
+        with xthematic.display.ColoredStream.open() as stream:
             stream.echo(text=color_.hex, fg=color_, nl=True)
             stream.echo(text=color_.hex, bg=color_, nl=False)
             input()
@@ -222,16 +221,16 @@ def color(color_id, color, xresources_file, theme_name, all_terminals):
         if color:
             raise NotImplementedError()
         else:
-            display_color(xredit.themes.theme_colors(theme_name)[color_id])
+            display_color(xthematic.themes.theme_colors(theme_name)[color_id])
 
     elif all_terminals:
         # TODO
         raise NotImplementedError()
     else:
         if color:
-            xredit.term.TERMINAL_COLORS[color_id] = color
+            xthematic.term.TERMINAL_COLORS[color_id] = color
         else:
-            display_color(xredit.term.TERMINAL_COLORS[color_id])
+            display_color(xthematic.term.TERMINAL_COLORS[color_id])
 
 
 def edit():

@@ -4,26 +4,25 @@ import subprocess
 import xrp
 import xrp.parser
 
-import xredit.config
-import xredit.colors
-import xredit.term
-
+import xthematic.colors
+import xthematic.config
+import xthematic.term
 
 AUTO_GENERATED_TEMPLATE = (
-    "! auto generated colors from xredit\n"
+    "! auto generated colors from xthematic\n"
     "!\n"
     "!\n"
     "{}\n"
-    "! xredit end\n"
+    "! xthematic end\n"
 )
 
 
 def save_terminal_colors(theme_name, overwrite=False):
-    theme_file = xredit.config.USER_THEME_DIR / theme_name
+    theme_file = xthematic.config.USER_THEME_DIR / theme_name
     if theme_file.exists() and not overwrite:
         raise FileExistsError(r'there already exists a theme {theme_name!r}')
-    colors_string = (resource_string(color_id, xredit.term.TERMINAL_COLORS[color_id], nl=True)
-                     for color_id, color in xredit.term.TERMINAL_COLORS.items())
+    colors_string = (resource_string(color_id, xthematic.term.TERMINAL_COLORS[color_id], nl=True)
+                     for color_id, color in xthematic.term.TERMINAL_COLORS.items())
     string = AUTO_GENERATED_TEMPLATE.format(''.join(colors_string))
     try:
         with theme_file.open(mode='w') as f:
@@ -36,7 +35,7 @@ def save_terminal_colors(theme_name, overwrite=False):
 
 def activate_theme(name, permanent=True, link_file=None):
     """
-    :param name: name of the theme file in xredit.config.USER_THEME_DIR
+    :param name: name of the theme file in xthematic.config.USER_THEME_DIR
     :param permanent: boolean flag whether the resources should be loaded and
     the theme included in the ~/.Xresources file
     :param link_file: a link_file to configure pointing to the theme file. Does not modify
@@ -47,17 +46,17 @@ def activate_theme(name, permanent=True, link_file=None):
     if permanent:
         if link_file:
             tmp = backup_file_path(file_path=link_file)
-            os.symlink(xredit.config.USER_THEME_DIR / name, tmp)
+            os.symlink(xthematic.config.USER_THEME_DIR / name, tmp)
             os.rename(src=tmp, dst=link_file)
-            subprocess.check_call(['xrdb', '-load', xredit.config.USER_XRESOURCES_FILE])
+            subprocess.check_call(['xrdb', '-load', xthematic.config.USER_XRESOURCES_FILE])
         else:
-            include_theme_in_resources(name, xredit.config.USER_XRESOURCES_FILE)
-            include = '-I' + str(xredit.config.USER_THEME_DIR)
-            subprocess.check_call(['xrdb', include, '-load', xredit.config.USER_XRESOURCES_FILE])
+            include_theme_in_resources(name, xthematic.config.USER_XRESOURCES_FILE)
+            include = '-I' + str(xthematic.config.USER_THEME_DIR)
+            subprocess.check_call(['xrdb', include, '-load', xthematic.config.USER_XRESOURCES_FILE])
 
 
 def remove_theme(name):
-    t = xredit.config.USER_THEME_DIR / name
+    t = xthematic.config.USER_THEME_DIR / name
     if t.exists():
         os.remove(t)
     else:
@@ -69,7 +68,7 @@ def include_theme_in_resources(name, resource_file):
 
     A backup of the original resource file is left in the directory with a '.backup' suffix
     """
-    theme_file = xredit.config.USER_THEME_DIR / name
+    theme_file = xthematic.config.USER_THEME_DIR / name
     if not theme_file.is_file():
         raise FileNotFoundError("theme file doesn't exist")
     incl_string = str(xrp.parser.XIncludeStatement(include_file=name))
@@ -85,19 +84,19 @@ def include_theme_in_resources(name, resource_file):
 def activate_theme_in_terminal(name):
     for color_id, color in theme_colors(theme_name=name).items():
         # TODO activating a theme sets all of the themes colors as custom - perhaps rethink activation
-        xredit.term.TERMINAL_COLORS[color_id] = color
+        xthematic.term.TERMINAL_COLORS[color_id] = color
 
 
 def all_themes():
-    return os.listdir(xredit.config.USER_THEME_DIR)
+    return os.listdir(xthematic.config.USER_THEME_DIR)
 
 
 def theme_colors(theme_name):
-    parsed = xrp.parse_file(xredit.config.USER_THEME_DIR / theme_name)
+    parsed = xrp.parse_file(xthematic.config.USER_THEME_DIR / theme_name)
     dct = {}
-    for color_id in xredit.colors.ColorIdentifier.all_resources():
+    for color_id in xthematic.colors.ColorIdentifier.all_resources():
         hex_code = parsed.resources['*' + color_id.resource_id]
-        dct[color_id] = xredit.colors.Color(hex_code)
+        dct[color_id] = xthematic.colors.Color(hex_code)
     return dct
 
 

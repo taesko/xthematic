@@ -6,8 +6,8 @@ import subprocess
 
 import collections
 
-import xredit.colors
-import xredit.config
+import xthematic.colors
+import xthematic.config
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +46,8 @@ class _LoadedColors(collections.Mapping):
         for number, hex_code in sorted(cast):
             if number in colors and hex_code != colors[number]:
                 raise RuntimeError(f"color{number} has more than one value")
-            cid = xredit.colors.ColorIdentifier(number)
-            c = xredit.colors.Color(hex_code)
+            cid = xthematic.colors.ColorIdentifier(number)
+            c = xthematic.colors.Color(hex_code)
             colors[cid] = c
         return colors  # values are sorted by keys
 
@@ -78,7 +78,7 @@ LOADED_COLORS = _LoadedColors()
 
 
 class _CustomColors(collections.MutableMapping):
-    def __init__(self, session_id=xredit.config.TERMINAL_SESSION_ID):
+    def __init__(self, session_id=xthematic.config.TERMINAL_SESSION_ID):
         self._session_id = session_id
         self._colors = self.read_customized_colors(self._session_id)
         logger.debug('initialized %s instance %s', self.__class__.__name__, self)
@@ -86,17 +86,17 @@ class _CustomColors(collections.MutableMapping):
 
     @staticmethod
     def custom_dict():
-        with xredit.config.USER_CUSTOM_FILE.open() as f:
+        with xthematic.config.USER_CUSTOM_FILE.open() as f:
             return json.load(f)
 
     @staticmethod
-    def read_customized_colors(session_id=xredit.config.TERMINAL_SESSION_ID):
+    def read_customized_colors(session_id=xthematic.config.TERMINAL_SESSION_ID):
         json_dict = _CustomColors.custom_dict()
         color_strings = json_dict.get(session_id, {})
         colors = {}
         for index, hex_code in color_strings.items():
             index = int(index)
-            colors[xredit.colors.ColorIdentifier(index)] = xredit.colors.Color(hex_code)
+            colors[xthematic.colors.ColorIdentifier(index)] = xthematic.colors.Color(hex_code)
         return colors
 
     def __len__(self) -> int:
@@ -112,8 +112,8 @@ class _CustomColors(collections.MutableMapping):
         json_dict = self.__class__.custom_dict()
         color_hexes = json_dict.get(self._session_id, {})
         color_hexes[str(color_id.id)] = str(color.hex)
-        json_dict[xredit.config.TERMINAL_SESSION_ID] = color_hexes
-        with xredit.config.USER_CUSTOM_FILE.open(mode='w') as f:
+        json_dict[xthematic.config.TERMINAL_SESSION_ID] = color_hexes
+        with xthematic.config.USER_CUSTOM_FILE.open(mode='w') as f:
             json.dump(obj=json_dict, fp=f)
         self._colors[color_id] = color
         logger.info('set custom color %s to %s', color_id, color)
@@ -124,8 +124,8 @@ class _CustomColors(collections.MutableMapping):
         color = color_hexes[str(color_id.id)]
         assert color == self._colors[color_id].hex
         del color_hexes[str(color_id.id)]
-        json_dict[xredit.config.TERMINAL_SESSION_ID] = color_hexes
-        with xredit.config.USER_CUSTOM_FILE.open(mode='w') as f:
+        json_dict[xthematic.config.TERMINAL_SESSION_ID] = color_hexes
+        with xthematic.config.USER_CUSTOM_FILE.open(mode='w') as f:
             json.dump(obj=json_dict, fp=f)
         logger.info('removed custom color %s with hex %s', color_id, color)
         del self._colors[color_id]
@@ -134,7 +134,7 @@ class _CustomColors(collections.MutableMapping):
         json_dict = self.__class__.custom_dict()
         if self._session_id in json_dict:
             del json_dict[self._session_id]
-        with xredit.config.USER_CUSTOM_FILE.open(mode='w') as f:
+        with xthematic.config.USER_CUSTOM_FILE.open(mode='w') as f:
             json.dump(obj=json_dict, fp=f)
         logger.info('reset all custom colors')
         logger.info('removed colors: ', self._colors)

@@ -10,14 +10,14 @@ CONSOLE_HANDLER.setFormatter(logging.Formatter(fmt='{levelname}: {message}', sty
 root_logger.addHandler(CONSOLE_HANDLER)
 
 
-def file_state_ok(file):
+def file_state_ok(file, default_text=''):
     if file.exists():
         if not os.access(file, mode=os.R_OK | os.W_OK):
             logging.warning("can't r/w to file %s", file)
         return True
 
     try:
-        file.write_text('')
+        file.write_text(default_text)
     except OSError:
         logging.warning("file '%s' doesn't exist and couldn't be created", file)
         return False
@@ -25,14 +25,14 @@ def file_state_ok(file):
     return True
 
 
-def get_safe_file(file, backup=None):
+def get_safe_file(file, backup=None, default_text=''):
     """ Get a safe file path that is guaranteed to exist and have r/w access.
 
     Returns the file argument if file_state_ok is true for it.
     Returns the backup argument if it's supplied and file_state_ok is not true for the first argument.
     Otherwise raises RuntimeError
     """
-    if file_state_ok(file):
+    if file_state_ok(file, default_text=default_text):
         return file
     elif backup and file_state_ok(backup):
         logging.info("can't r/w to file %s, using backup %s", file, backup)
@@ -74,13 +74,13 @@ except KeyError:
     logging.critical('$TERM_SESSION_ID variable is not set - see install instructions.')
     raise
 
-USER_CONFIG_DIR = get_safe_dir(user_config_home() / 'xredit')
+USER_CONFIG_DIR = get_safe_dir(user_config_home() / 'xthematic')
 USER_THEME_DIR = get_safe_dir(pathlib.Path(os.environ.get('XTHEMES_DIR', USER_CONFIG_DIR / 'themes')))
 USER_CONFIG_FILE = get_safe_file(USER_CONFIG_DIR / 'config')
-USER_CUSTOM_FILE = get_safe_file(USER_CONFIG_DIR / 'custom')
+USER_CUSTOM_FILE = get_safe_file(USER_CONFIG_DIR / 'custom', default_text='{}')
 USER_XRESOURCES_FILE = get_safe_file(pathlib.Path(os.environ['HOME'], '.Xresources'))
 
-LOG_FILE = get_safe_file(pathlib.Path('/var/log/xredit.log'),
+LOG_FILE = get_safe_file(pathlib.Path('/var/log/xthematic.log'),
                          backup=pathlib.Path(USER_CONFIG_DIR / 'logs'))
 
 LOG_FILE_HANDLER = logging.FileHandler(str(LOG_FILE))

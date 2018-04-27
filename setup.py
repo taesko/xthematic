@@ -9,10 +9,10 @@ from shutil import rmtree
 from setuptools import setup, Command, find_packages
 
 # Package meta-data.
-NAME = 'xredit'
+NAME = 'xthematic'
 DESCRIPTION = 'cli app for customizing terminals'
 KEYWORDS = 'cli application terminal emulator theme customize X XResources'
-URL = 'https://github.com/taesko/xredit'
+URL = 'https://github.com/taesko/xthematic'
 AUTHOR = 'Antonio Todorov'
 EMAIL = 'taeskow@gmail.com'
 REQUIRES_PYTHON = '>=3.6.0'
@@ -90,7 +90,7 @@ setup(
     include_package_data=True,
     entry_points='''
         [console_scripts]
-        xredit=xredit.cli:main
+        xthematic=xthematic.cli:main
     ''',
     license='MIT',
     classifiers=[

@@ -1,9 +1,7 @@
 import random
 from unittest import TestCase
 
-import pytest
-
-from xredit import colors
+from xthematic import colors
 
 
 def byte_to_str(byte):
