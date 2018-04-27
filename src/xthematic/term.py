@@ -26,19 +26,12 @@ class _LoadedColors(collections.Mapping):
 
     def __init__(self):
         self._colors = {}
-        self._hash = ''
-        logger.debug('initialized %s', self.__class__.__name__, object.__repr__(self))
+        self.update()
+        logger.debug('initialized %s', object.__repr__(self))
 
     @staticmethod
-    def xrdb_hash():
-        return hash(subprocess.check_output(['xrdb', '-query']))
-
-    @staticmethod
-    def loaded():
-        queried = subprocess.Popen(['xrdb', '-query'], stdout=subprocess.PIPE)
-        grepped = subprocess.check_output(['grep', 'color'], stdin=queried.stdout)
-        queried.wait()
-        lines = grepped.splitlines()
+    def colors_from_xrdb(output):
+        lines = output.splitlines()
         matches = (re.match(pattern=b'.*color(\d+):\t([^ ]+)', string=l) for l in lines)
         grouped = (m.groups() for m in matches)
         cast = ((int(num), byte_arr.decode(encoding='ascii')) for num, byte_arr in grouped)
@@ -51,25 +44,21 @@ class _LoadedColors(collections.Mapping):
             colors[cid] = c
         return colors  # values are sorted by keys
 
-    @keep_updated
     def __iter__(self):
         yield from self._colors
 
-    @keep_updated
     def __len__(self):
         return len(self._colors)
 
-    @keep_updated
     def __getitem__(self, k):
         return self._colors[k]
 
     def update(self):
-        self._colors = self.loaded()
-        self._hash = self.xrdb_hash()
+        queried = subprocess.Popen(['xrdb', '-query'], stdout=subprocess.PIPE)
+        grepped = subprocess.check_output(['grep', 'color'], stdin=queried.stdout)
+        queried.wait()
+        self._colors = self.colors_from_xrdb(grepped)
         logger.debug('updated colors of %s', object.__repr__(self))
-
-    def is_outdated(self):
-        return self._hash != self.xrdb_hash()
 
 
 LOADED_COLORS = _LoadedColors()
