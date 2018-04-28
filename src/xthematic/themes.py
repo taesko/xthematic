@@ -25,7 +25,7 @@ def save_terminal_colors(theme_name, overwrite=False):
                      for color_id, color in xthematic.term.TERMINAL_COLORS.items())
     string = AUTO_GENERATED_TEMPLATE.format(''.join(colors_string))
     try:
-        with theme_file.open(mode='w') as f:
+        with open(theme_file, mode='x', encoding='utf-8') as f:
             f.write(string)
     except Exception:
         if theme_file.exists():
@@ -73,8 +73,8 @@ def include_theme_in_resources(name, resource_file):
         raise FileNotFoundError("theme file doesn't exist")
     incl_string = str(xrp.parser.XIncludeStatement(include_file=name))
     output_file = backup_file_path(resource_file, suffix='.out')
-    with open(resource_file, mode='r') as input_:
-        with open(output_file, mode='w') as out:
+    with open(resource_file, mode='r', encoding='utf-8') as input_:
+        with open(output_file, mode='w', encoding='utf-8') as out:
             for line in replace_auto_generated(stream=input_, new_value=incl_string):
                 out.write(line)
     os.rename(resource_file, backup_file_path(resource_file, can_exist=True))

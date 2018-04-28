@@ -73,7 +73,7 @@ class _CustomColors(collections.MutableMapping):
 
     @staticmethod
     def custom_dict():
-        with xthematic.config.USER_CUSTOM_FILE.open() as f:
+        with open(xthematic.config.USER_CUSTOM_FILE) as f:
             return json.load(f)
 
     @staticmethod
@@ -100,7 +100,7 @@ class _CustomColors(collections.MutableMapping):
         color_hexes = json_dict.get(self._session_id, {})
         color_hexes[str(color_id.id)] = str(color.hex)
         json_dict[xthematic.config.TERMINAL_SESSION_ID] = color_hexes
-        with xthematic.config.USER_CUSTOM_FILE.open(mode='w') as f:
+        with open(xthematic.config.USER_CUSTOM_FILE, mode='w', ) as f:
             json.dump(obj=json_dict, fp=f)
         self._colors[color_id] = color
         logger.info('set custom color %s to %s', color_id, color)
@@ -112,7 +112,7 @@ class _CustomColors(collections.MutableMapping):
         assert color == self._colors[color_id].hex
         del color_hexes[str(color_id.id)]
         json_dict[xthematic.config.TERMINAL_SESSION_ID] = color_hexes
-        with xthematic.config.USER_CUSTOM_FILE.open(mode='w') as f:
+        with open(xthematic.config.USER_CUSTOM_FILE, mode='w') as f:
             json.dump(obj=json_dict, fp=f)
         logger.info('removed custom color %s with hex %s', color_id, color)
         del self._colors[color_id]
@@ -121,7 +121,7 @@ class _CustomColors(collections.MutableMapping):
         json_dict = self.__class__.custom_dict()
         if self._session_id in json_dict:
             del json_dict[self._session_id]
-        with xthematic.config.USER_CUSTOM_FILE.open(mode='w') as f:
+        with open(xthematic.config.USER_CUSTOM_FILE, mode='w') as f:
             json.dump(obj=json_dict, fp=f)
         logger.info('reset all custom colors')
         logger.info('removed colors: ', self._colors)
