@@ -12,6 +12,7 @@ class ColoredContext:
     all_color_identifiers = set(xthematic.colors.ColorIdentifier.all_four_bit_colors())
 
     def __init__(self):
+        self.used_color_ids = set()
         self.overwritten_colors = {}
 
     @property
@@ -19,38 +20,49 @@ class ColoredContext:
         return set(self.overwritten_colors.keys())
 
     @property
-    def unregistered_ids(self):
-        return self.all_color_identifiers - self.registered_ids
+    def free(self):
+        return self.all_color_identifiers - self.registered_ids - self.used_color_ids
 
     def register_color(self, color):
-        if len(self.unregistered_ids) < 0:
+        if len(self.free) < 0:
             raise RuntimeError("cannot register any more color values.")
         elif color in xthematic.term.TERMINAL_COLORS.values():
             raise ValueError(f"color {color} is already defined in the terminal's colors")
 
-        id_ = self.unregistered_ids.pop()
+        id_ = self.free.pop()
         self.overwritten_colors[id_] = xthematic.term.TERMINAL_COLORS[id_]
-        xthematic.term.TERMINAL_COLORS[id_] = color
+        try:
+            xthematic.term.TERMINAL_COLORS[id_] = color
+        except Exception:
+            del self.overwritten_colors[id_]
+            raise
 
     def unregister_color(self, color):
         id_ = self.id_for_color(color)
         xthematic.term.TERMINAL_COLORS[id_] = self.overwritten_colors[id_]
         del self.overwritten_colors[id_]
+        self.used_color_ids.remove(id_)
 
     def unregister_all(self):
         for id_ in self.registered_ids:
             xthematic.term.TERMINAL_COLORS[id_] = self.overwritten_colors[id_]
         self.overwritten_colors.clear()
+        self.used_color_ids.clear()
 
-    def format_string_for(self, fg=None, bg=None):
+    def format_string_for_ids(self, fg_id=None, bg_id=None):
         s = '{}' + sty.rs.all
-        if fg:
-            id_ = self.id_for_color(fg)
-            s = sty.fg(id_.four_bit_color_name) + s
-        if bg:
-            id_ = self.id_for_color(bg)
-            s = sty.bg(id_.four_bit_color_name) + s
+        if fg_id:
+            s = sty.fg(fg_id.four_bit_color_name) + s
+            self.used_color_ids.add(fg_id)
+        if bg_id:
+            s = sty.bg(bg_id.four_bit_color_name) + s
+            self.used_color_ids.add(bg_id)
         return s
+
+    def format_string_for_colors(self, fg_color=None, bg_color=None):
+        fg_id = self.id_for_color(fg_color) if fg_color else None
+        bg_id = self.id_for_color(bg_color) if bg_color else None
+        return self.format_string_for_ids(fg_id=fg_id, bg_id=bg_id)
 
     @staticmethod
     def printable_colors():
@@ -75,12 +87,16 @@ class ColoredStream:
         yield cls(context=cc)
         cc.unregister_all()
 
+    def echo_by_id(self, text, nl=True, fg_id=None, bg_id=None):
+        s = self.context.format_string_for_ids(fg_id=fg_id, bg_id=bg_id)
+        click.echo(s.format(text), nl=nl)
+
     def echo(self, text, nl=True, fg=None, bg=None):
         if fg and fg not in self.context.printable_colors():
             self.context.register_color(fg)
         if bg and bg not in self.context.printable_colors():
             self.context.register_color(bg)
-        s = self.context.format_string_for(fg=fg, bg=bg)
+        s = self.context.format_string_for_colors(fg_color=fg, bg_color=bg)
         click.echo(s.format(text), nl=nl)
 
 
@@ -90,15 +106,11 @@ def escape_sequence_index_string(fg_id, bg_id):
 
 
 def echo_theme(theme_name=None):
-    if theme_name:
-        colors = xthematic.themes.theme_colors(theme_name)
-    else:
-        colors = xthematic.term.TERMINAL_COLORS
     with ColoredStream.open() as stream:
         for row_id in xthematic.colors.ColorIdentifier.all_four_bit_colors():
             for col_id in list(xthematic.colors.ColorIdentifier.all_four_bit_colors())[:8]:
-                stream.echo(text=escape_sequence_index_string(fg_id=row_id, bg_id=col_id),
-                            nl=False, fg=colors[row_id], bg=colors[col_id])
+                stream.echo_by_id(text=escape_sequence_index_string(fg_id=row_id, bg_id=col_id),
+                                  nl=False, fg_id=row_id, bg_id=col_id)
                 click.echo(' ', nl=False)
             click.echo(nl=True)
         input()
