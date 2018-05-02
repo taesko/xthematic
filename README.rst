@@ -17,6 +17,7 @@ Installation
 python 3.6+ and pip are required.
 
 .. code-block:: bash
+
     git clone https://github.com/taesko/xthematic.git && cd xthematic
     pip install --user .
 
@@ -25,6 +26,7 @@ a warning is printed with invocation of the app and logs are written to $XDG_CON
 You need to create the /var/log/xthematic.log file with r/w permissions if you want to avoid this.
 
 .. code-block:: bash
+
     sudo touch /var/log/xthematic.log
     sudo chown username: /var/log/xthematic.log
 
@@ -32,7 +34,9 @@ You need to create the /var/log/xthematic.log file with r/w permissions if you w
 Documentation
 =============
 The most up to date documentation is always:
+
 .. code-block:: bash
+
     xthematic --help
 
 Man/info pages or online docs are not written.
