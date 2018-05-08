@@ -3,11 +3,12 @@ xthematic
 modify, save and load terminal colors in a convenient manner.
 
 ### Quick Demo
+A demo youtube video is available below that showcases the following:
 * set colors from the terminal through hex codes:
 * save the current colors as a theme with some name
 * activate a theme in the terminal
 
-![xthematic demo gif](https://thumbs.gfycat.com/FabulousLimitedKittiwake-size_restricted.gif)
+[![xthematic demo gif](https://img.youtube.com/vi/w0SPD3lVWHE/0.jpg)](https://www.youtube.com/watch?v=w0SPD3lVWHE)
 
 
 ### Installation
