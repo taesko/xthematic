@@ -1,3 +1,4 @@
+import itertools
 import os
 import subprocess
 
@@ -17,16 +18,61 @@ AUTO_GENERATED_TEMPLATE = (
 )
 
 
+class ThemeContents:
+    def __init__(self, colormap, *, _text=None):
+        if _text:
+            assert colormap == self.colors_of_string(_text)
+        else:
+            _text = self.string_from_colors(colormap)
+
+        self._text = _text
+        self.colormap = colormap
+
+    @classmethod
+    def from_name(cls, name):
+        return cls.from_file(xthematic.config.USER_THEME_DIR / name)
+
+    @classmethod
+    def from_file(cls, file):
+        return cls.from_string(_read_text(file))
+
+    @classmethod
+    def from_string(cls, string):
+        dct = cls.colors_of_string(string)
+        return cls(colormap=dct, _text=string)
+
+    @staticmethod
+    def colors_of_string(string):
+        parsed = xrp.parse(string)
+        dct = {}
+        for color_id in xthematic.colors.ColorIdentifier.all_resources():
+            try:
+                hex_code = parsed.resources['*' + color_id.resource_id]
+                dct[color_id] = xthematic.colors.Color(hex_code)
+            except KeyError:
+                pass
+        return dct
+
+    @staticmethod
+    def string_from_colors(colormap):
+        return ''.join(itertools.starmap(resource_string, colormap.items()))
+
+    @property
+    def colors(self):
+        return self.colormap
+
+    @property
+    def text(self):
+        return self._text
+
+
 def save_terminal_colors(theme_name, overwrite=False):
     theme_file = xthematic.config.USER_THEME_DIR / theme_name
     if theme_file.exists() and not overwrite:
         raise FileExistsError(r'there already exists a theme {theme_name!r}')
-    colors_string = (resource_string(color_id, xthematic.term.TERMINAL_COLORS[color_id], nl=True)
-                     for color_id, color in xthematic.term.TERMINAL_COLORS.items())
-    string = AUTO_GENERATED_TEMPLATE.format(''.join(colors_string))
+    string = AUTO_GENERATED_TEMPLATE.format(ThemeContents.string_from_colors(xthematic.term.TERMINAL_COLORS))
     try:
-        with open(theme_file, mode='x', encoding='utf-8') as f:
-            f.write(string)
+        _write_text(theme_file, string)
     except Exception:
         if theme_file.exists():
             os.remove(theme_file)
@@ -42,6 +88,7 @@ def activate_theme(name, permanent=True, link_file=None):
     the ~/.Xresources file if parameter is present.
     :return: None
     """
+    terminal_theme = ThemeContents(xthematic.term.TERMINAL_COLORS)
     activate_theme_in_terminal(name)
     if permanent:
         if link_file:
@@ -53,6 +100,17 @@ def activate_theme(name, permanent=True, link_file=None):
             include_theme_in_resources(name, xthematic.config.USER_XRESOURCES_FILE)
             include = '-I' + str(xthematic.config.USER_THEME_DIR)
             subprocess.check_call(['xrdb', include, '-load', xthematic.config.USER_XRESOURCES_FILE])
+        _write_text(xthematic.config.USER_OLD_THEME_FILE, '')  # truncate
+    else:
+        _write_text(xthematic.config.USER_OLD_THEME_FILE, terminal_theme.text)
+
+
+def deactivate_theme():
+    """ Deactivate a temporary theme."""
+    for color_id, color in old_theme_colors().items():
+        xthematic.term.TERMINAL_COLORS[color_id] = color
+
+    _write_text(xthematic.config.USER_OLD_THEME_FILE, '')  # truncate
 
 
 def remove_theme(name):
@@ -92,12 +150,11 @@ def all_themes():
 
 
 def theme_colors(theme_name):
-    parsed = xrp.parse_file(xthematic.config.USER_THEME_DIR / theme_name)
-    dct = {}
-    for color_id in xthematic.colors.ColorIdentifier.all_resources():
-        hex_code = parsed.resources['*' + color_id.resource_id]
-        dct[color_id] = xthematic.colors.Color(hex_code)
-    return dct
+    return ThemeContents.from_name(theme_name).colors
+
+
+def old_theme_colors():
+    return ThemeContents.from_file(xthematic.config.USER_OLD_THEME_FILE).colors
 
 
 def resource_string(color_id, color, nl=True):
@@ -151,3 +208,15 @@ def backup_file_path(file_path, suffix='.backup', can_exist=False):
             return file_backup
     else:
         raise RuntimeError("wtf")
+
+
+def _write_text(file, text):
+    """ Write to file in utf-8 encoding."""
+    with open(file, mode='w', encoding='utf-8') as f:
+        return f.write(text)
+
+
+def _read_text(file):
+    """ Read a file in utf-8 encoding."""
+    with open(file, mode='r', encoding='utf-8') as f:
+        return f.read()

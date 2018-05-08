@@ -78,6 +78,7 @@ USER_CONFIG_DIR = get_safe_dir(user_config_home() / 'xthematic')
 USER_THEME_DIR = get_safe_dir(pathlib.Path(os.environ.get('XTHEMES_DIR', USER_CONFIG_DIR / 'themes')))
 USER_CONFIG_FILE = get_safe_file(USER_CONFIG_DIR / 'config')
 USER_CUSTOM_FILE = get_safe_file(USER_CONFIG_DIR / 'custom', default_text='{}')
+USER_OLD_THEME_FILE = get_safe_file(USER_CONFIG_DIR / 'old_theme')
 USER_XRESOURCES_FILE = get_safe_file(pathlib.Path(os.environ['HOME'], '.Xresources'))
 
 LOG_FILE = get_safe_file(pathlib.Path('/var/log/xthematic.log'),

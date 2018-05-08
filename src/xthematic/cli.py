@@ -135,9 +135,27 @@ def view(color_views, foreground, background, text):
         input()  # wait for user to press Enter
 
 
+def deactivate_theme(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    xthematic.themes.deactivate_theme()
+    ctx.exit()
+
+
+def list_themes(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(' '.join(xthematic.themes.all_themes()), nl=True)
+    ctx.exit()
+
+
 @main.command()
 @click.argument('theme_name', type=XThemeType(), required=False)
+@click.option('-d', '--deactivate', is_flag=True, default=False,
+              is_eager=True, callback=deactivate_theme, expose_value=False,
+              help="deactivate the current theme and return to terminal default colors")
 @click.option('-l', '--list', is_flag=True, default=False,
+              is_eager=True, callback=list_themes, expose_value=False,
               help="list all saved themes")
 @click.option('-r', '--remove', is_flag=True, default=False,
               help="delete the specified theme")
@@ -156,7 +174,7 @@ def view(color_views, foreground, background, text):
 @click.option('-o', '--overwrite', is_flag=True, default=False,
               cls=DependentOption, dependencies=['save'],
               help="overwrite a theme file if it exists with the current terminal colors")
-def theme(theme_name, list, remove, activate, permanent, save, overwrite):
+def theme(theme_name, remove, activate, permanent, save, overwrite):
     """ view, activate or save themes.
 
     The first argument to this command is a theme name (valid or invalid), if no theme_name
@@ -169,10 +187,7 @@ def theme(theme_name, list, remove, activate, permanent, save, overwrite):
     While the '--save' and '--overwrite' options for saving.
     """
     if not theme_name:
-        if list:
-            click.echo(' '.join(xthematic.themes.all_themes()), nl=True)
-        else:
-            xthematic.display.echo_theme()
+        xthematic.display.echo_theme()
     elif activate:
         if xthematic.config.USER_THEME_LINK_FILE:
             xthematic.themes.activate_theme(theme_name, permanent=permanent,
