@@ -16,7 +16,7 @@ URL = 'https://github.com/taesko/xthematic'
 AUTHOR = 'Antonio Todorov'
 EMAIL = 'taeskow@gmail.com'
 REQUIRES_PYTHON = '>=3.6.0'
-REQUIRED_FOR_INSTALL = ['click', 'xparser', 'sty']
+REQUIRED_FOR_INSTALL = ['click', 'xparser>=0.0.4', 'sty']
 REQUIRED_FOR_TESTS = ['pytest', 'pytest-runner']
 VERSION = None
 
