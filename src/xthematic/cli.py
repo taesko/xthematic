@@ -82,11 +82,21 @@ class ColorViewType(click.ParamType):
 
     def convert(self, value, param, ctx):
         parts = value.split(':')
-        if len(parts) < 3:
-            parts.extend([None] * (3 - len(parts)))
+        if len(parts) > 3:
+            self.fail(f"{value!r} has too many fields")
+
+        # all parts must be either a valid string or None
+        _parts = []
+        for p in parts:
+            if p:
+                _parts.append(p)
+            else:
+                _parts.append(None)
+        parts = _parts
+        parts.extend([None] * (3 - len(parts)))
         color_type = ColorType()
         convert = functools.partial(color_type.convert, param=param, ctx=ctx)
-        for i in range(len(parts)):
+        for i in range(2):
             if parts[i]:
                 parts[i] = convert(parts[i])
         return self.__class__.ColorView(*parts)
@@ -129,6 +139,7 @@ def view(color_views, foreground, background, text):
         for i, cv in enumerate(color_views):
             fg = cv.foreground or foreground
             bg = cv.background or background
+            text = cv.text or text
             if i == len(color_views) - 1:
                 nl = False
             stream.echo(text=text, fg=fg, bg=bg, nl=nl)
