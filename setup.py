@@ -154,5 +154,6 @@ setup(
     # $ setup.py publish support.
     cmdclass={
         'upload': UploadCommand,
+        'test_upload': TestUploadCommand
     },
 )
