@@ -202,9 +202,19 @@ def theme(theme_name, remove, activate, permanent, save, overwrite):
         xthematic.display.echo_theme(theme_name)
 
 
+def reset_colors(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    xthematic.term.TERMINAL_COLORS.reset_customized()
+    ctx.exit()
+
+
 @main.command()
 @click.argument('color_id', type=ColorIdType())
 @click.argument('color', type=ColorType(), required=False)
+@click.option('-r', '--reset', is_flag=True, default=False,
+              is_eager=True, callback=reset_colors, expose_value=False,
+              help="reset the customized colors for this session")
 @click.option('-x', '--xresources', 'xresources_file', help='set or view inside this resources file',
               type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
               cls=MutuallyExclusiveOption, mutually_exclusive=['theme_name', 'all_terminals'])

@@ -117,7 +117,7 @@ class _CustomColors(collections.MutableMapping):
         logger.info('removed custom color %s with hex %s', color_id, color)
         del self._colors[color_id]
 
-    def reset(self):
+    def clear(self):
         json_dict = self.__class__.custom_dict()
         if self._session_id in json_dict:
             del json_dict[self._session_id]
@@ -170,6 +170,10 @@ class _TermColors(collections.MutableMapping):
 
     def __delitem__(self, color_id):
         raise NotImplementedError()
+
+    def reset_customized(self):
+        for color_id in list(self.custom.keys()):
+            self[color_id] = self.loaded[color_id]
 
     def __repr__(self):
         return "{self.__class__}({colors})".format(
