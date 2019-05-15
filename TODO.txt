@@ -1,0 +1,9 @@
+Improve support for 8 bit and 256 bit colored terminals.
+
+Add support for string specification of colors e.g.'blue' for #0000FF
+
+Add support for other resources like *foreground and *background.
+
+Add support for editting a single resource in files.
+
+Add a curses app mode in which you can edit, view, save colors and themes faster.
